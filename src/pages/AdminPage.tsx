@@ -1,0 +1,105 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { sv } from "date-fns/locale";
+import { Lock, LogOut } from "lucide-react";
+
+const ADMIN_PASSWORD = "fonsax2024";
+
+const AdminPage = () => {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const { data: bookings = [], isLoading } = useQuery({
+    queryKey: ["admin-bookings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("*")
+        .order("date", { ascending: true })
+        .order("time", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: authenticated,
+  });
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      setAuthenticated(true);
+      setError("");
+    } else {
+      setError("Fel lösenord");
+    }
+  };
+
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen pt-24 pb-16 px-4 flex items-center justify-center">
+        <div className="w-full max-w-sm animate-fade-up">
+          <div className="text-center mb-8">
+            <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <h1 className="text-2xl font-display font-semibold">Admin</h1>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Lösenord"
+              required
+            />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" className="w-full">Logga in</Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen pt-24 pb-16 px-4">
+      <div className="container mx-auto max-w-3xl">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-display font-semibold">Bokningar</h1>
+          <Button variant="ghost" size="sm" onClick={() => setAuthenticated(false)}>
+            <LogOut className="w-4 h-4 mr-1" /> Logga ut
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <p className="text-muted-foreground">Laddar...</p>
+        ) : bookings.length === 0 ? (
+          <p className="text-muted-foreground">Inga bokningar ännu.</p>
+        ) : (
+          <div className="space-y-3">
+            {bookings.map((b: any) => (
+              <div key={b.id} className="bg-card border rounded-lg p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{b.customer_name}</p>
+                  <p className="text-sm text-muted-foreground">{b.customer_phone}</p>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{b.stylist}</span>
+                  {" · "}
+                  {format(new Date(b.date), "d MMM yyyy", { locale: sv })}
+                  {" · kl "}
+                  {b.time}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AdminPage;

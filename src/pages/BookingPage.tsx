@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,27 @@ const BookingPage = () => {
 
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
+  const bookingsQueryEnabled = !!stylist && step >= 2;
+
+  // Admin invalidation only affects that browser tab; subscribe to DB changes so
+  // this page refetches when bookings are added/removed anywhere (other tabs, devices).
+  useEffect(() => {
+    const channel = supabase
+      .channel("bookings-slot-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["bookings"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   const { data: bookings = [] } = useQuery({
     queryKey: ["bookings", stylist, dateStr],
     queryFn: async () => {
@@ -37,9 +58,12 @@ const BookingPage = () => {
         .eq("stylist", stylist)
         .eq("date", dateStr);
       if (error) throw error;
-      return (data || []).map((b: any) => b.time);
+      return (data || []).map((b: { time: string }) => b.time.trim());
     },
-    enabled: !!stylist && step >= 2,
+    enabled: bookingsQueryEnabled,
+    staleTime: 0,
+    // Fallback when Realtime is off or delayed: keep slots accurate after admin deletes
+    refetchInterval: bookingsQueryEnabled ? 12_000 : false,
   });
 
   const bookMutation = useMutation({

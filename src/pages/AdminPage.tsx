@@ -2,10 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import type { Database } from "@/integrations/supabase/types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
-import { Lock, LogOut } from "lucide-react";
+import { Lock, LogOut, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
+type BookingRow = Database["public"]["Tables"]["bookings"]["Row"];
 
 const ADMIN_PASSWORD = "fonsax2024";
 
@@ -13,6 +17,7 @@ const AdminPage = () => {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const queryClient = useQueryClient();
 
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ["admin-bookings"],
@@ -26,6 +31,25 @@ const AdminPage = () => {
       return data || [];
     },
     enabled: authenticated,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("bookings").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+      await queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      toast.success("Bokningen är borttagen");
+    },
+    onError: (err: unknown) => {
+      const message =
+        err && typeof err === "object" && "message" in err && typeof (err as Error).message === "string"
+          ? (err as Error).message
+          : "Kunde inte ta bort bokningen";
+      toast.error(message);
+    },
   });
 
   const handleLogin = (e: React.FormEvent) => {
@@ -80,18 +104,34 @@ const AdminPage = () => {
           <p className="text-muted-foreground">Inga bokningar ännu.</p>
         ) : (
           <div className="space-y-3">
-            {bookings.map((b: any) => (
-              <div key={b.id} className="bg-card border rounded-lg p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+            {bookings.map((b: BookingRow) => (
+              <div
+                key={b.id}
+                className="bg-card border rounded-lg p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6"
+              >
                 <div className="flex-1">
                   <p className="font-medium text-foreground">{b.customer_name}</p>
                   <p className="text-sm text-muted-foreground">{b.customer_phone}</p>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">{b.stylist}</span>
-                  {" · "}
-                  {format(new Date(b.date), "d MMM yyyy", { locale: sv })}
-                  {" · kl "}
-                  {b.time}
+                <div className="flex flex-wrap items-center gap-3 sm:gap-6">
+                  <div className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{b.stylist}</span>
+                    {" · "}
+                    {format(new Date(b.date), "d MMM yyyy", { locale: sv })}
+                    {" · kl "}
+                    {b.time}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive shrink-0"
+                    disabled={deleteMutation.isPending && deleteMutation.variables === b.id}
+                    onClick={() => deleteMutation.mutate(b.id)}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Ta bort
+                  </Button>
                 </div>
               </div>
             ))}

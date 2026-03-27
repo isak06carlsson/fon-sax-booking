@@ -92,4 +92,24 @@ router.delete('/bookings/:id', (req, res) => {
   );
 });
 
+// Admin login endpoint
+router.post('/admin/login', (req, res) => {
+  const { password } = req.body;
+
+  if (!password) {
+    res.status(400).json({ error: 'Password required' });
+    return;
+  }
+
+  const adminPassword = process.env.ADMIN_PASSWORD || 'fonsax2024';
+
+  if (password === adminPassword) {
+    // Create a simple token (in production, use JWT)
+    const token = Buffer.from(`admin:${Date.now()}`).toString('base64');
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ error: 'Invalid password' });
+  }
+});
+
 export default router;

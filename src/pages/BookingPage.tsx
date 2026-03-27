@@ -92,6 +92,7 @@ const BookingPage = () => {
             {stylist} · {format(selectedDate, "d MMMM yyyy", { locale: sv })} · kl {selectedTime}
           </p>
           <p className="text-muted-foreground text-sm mb-8">Vi ser fram emot ditt besök.</p>
+          <p className="text-muted-foreground text-sm mb-8">Vill du avboka ditt besök? Ring oss på 0739647113</p>
           <Button variant="outline" onClick={() => { setBooked(false); setStep(1); setStylist(""); setSelectedTime(""); setName(""); setPhone(""); }}>
             Ny bokning
           </Button>

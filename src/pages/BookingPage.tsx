@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
+import { getBookedTimes, createBooking, startPolling, stopPolling } from "@/integrations/api/client";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight, User, Check } from "lucide-react";
 import { format, addDays, isSameDay } from "date-fns";
@@ -29,61 +29,48 @@ const BookingPage = () => {
 
   const bookingsQueryEnabled = !!stylist && step >= 2;
 
-  // Admin invalidation only affects that browser tab; subscribe to DB changes so
-  // this page refetches when bookings are added/removed anywhere (other tabs, devices).
+  // Set up polling to sync bookings across tabs and devices
   useEffect(() => {
-    const channel = supabase
-      .channel("bookings-slot-sync")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "bookings" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["bookings"] });
-        }
-      )
-      .subscribe();
+    if (!bookingsQueryEnabled) return;
+
+    const cleanup = startPolling(() => {
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+    }, 5000);
 
     return () => {
-      void supabase.removeChannel(channel);
+      cleanup();
+      stopPolling();
     };
-  }, [queryClient]);
+  }, [bookingsQueryEnabled, queryClient]);
 
   const { data: bookings = [] } = useQuery({
     queryKey: ["bookings", stylist, dateStr],
     queryFn: async () => {
       if (!stylist) return [];
-      const { data, error } = await supabase
-        .from("bookings")
-        .select("time")
-        .eq("stylist", stylist)
-        .eq("date", dateStr);
-      if (error) throw error;
-      return (data || []).map((b: { time: string }) => b.time.trim());
+      return getBookedTimes(stylist, dateStr);
     },
     enabled: bookingsQueryEnabled,
     staleTime: 0,
-    // Fallback when Realtime is off or delayed: keep slots accurate after admin deletes
-    refetchInterval: bookingsQueryEnabled ? 12_000 : false,
+    refetchInterval: bookingsQueryEnabled ? 5000 : false,
   });
 
   const bookMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("bookings").insert({
+      await createBooking({
         stylist,
         date: dateStr,
         time: selectedTime,
         customer_name: name.trim(),
         customer_phone: phone.trim(),
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       setBooked(true);
       toast.success("Bokningen är bekräftad!");
     },
-    onError: () => {
-      toast.error("Något gick fel. Försök igen.");
+    onError: (error) => {
+      toast.error(error.message || "Något gick fel. Försök igen.");
     },
   });
 

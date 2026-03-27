@@ -1,15 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import { getAllBookings, deleteBooking, type Booking } from "@/integrations/api/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 import { Lock, LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-
-type BookingRow = Database["public"]["Tables"]["bookings"]["Row"];
 
 const ADMIN_PASSWORD = "fonsax2024";
 
@@ -21,23 +18,12 @@ const AdminPage = () => {
 
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ["admin-bookings"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bookings")
-        .select("*")
-        .order("date", { ascending: true })
-        .order("time", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: getAllBookings,
     enabled: authenticated,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("bookings").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: deleteBooking,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
       await queryClient.invalidateQueries({ queryKey: ["bookings"] });
@@ -104,7 +90,7 @@ const AdminPage = () => {
           <p className="text-muted-foreground">Inga bokningar ännu.</p>
         ) : (
           <div className="space-y-3">
-            {bookings.map((b: BookingRow) => (
+            {bookings.map((b: Booking) => (
               <div
                 key={b.id}
                 className="bg-card border rounded-lg p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6"

@@ -11,9 +11,10 @@
     "db:init": "tsx src/db/init.ts"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.3.1",
     "express": "^4.21.0",
     "sqlite3": "^5.1.7",
-    "cors": "^2.8.5",
     "uuid": "^10.0.0"
   },
   "devDependencies": {

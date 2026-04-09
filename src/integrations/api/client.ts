@@ -5,6 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 export interface Booking {
   id: string;
   stylist: string;
+  service: string;
   date: string;
   time: string;
   customer_name: string;
@@ -14,6 +15,7 @@ export interface Booking {
 
 export interface CreateBookingInput {
   stylist: string;
+  service: string;
   date: string;
   time: string;
   customer_name: string;

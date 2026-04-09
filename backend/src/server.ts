@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import bookingsRouter from './routes/bookings.js';
+import db from './db/connection.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -15,6 +16,28 @@ const devAllowedOrigins = [
 ];
 
 const isProduction = process.env.NODE_ENV === 'production';
+
+// Function to cleanup expired bookings
+const cleanupExpiredBookings = () => {
+  const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD
+  db.run(
+    'DELETE FROM bookings WHERE date < ?',
+    [today],
+    function(err: Error | null) {
+      if (err) {
+        console.error('Error cleaning up expired bookings:', err);
+      } else if (this.changes > 0) {
+        console.log(`Cleaned up ${this.changes} expired booking(s)`);
+      }
+    }
+  );
+};
+
+// Run cleanup on server start
+cleanupExpiredBookings();
+
+// Run cleanup every hour
+setInterval(cleanupExpiredBookings, 60 * 60 * 1000);
 
 // Middleware
 app.use(

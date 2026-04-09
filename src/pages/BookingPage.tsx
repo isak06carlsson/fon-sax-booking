@@ -9,6 +9,7 @@ import { sv } from "date-fns/locale";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const STYLISTS = ["Ibbe", "Wiliam"];
+const SERVICES = ["Herrklipp - 250kr", "Hår + skägg - 350kr"];
 const TIME_SLOTS = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
   "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
@@ -18,6 +19,7 @@ const TIME_SLOTS = [
 const BookingPage = () => {
   const [step, setStep] = useState(1);
   const [stylist, setStylist] = useState("");
+  const [service, setService] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState("");
   const [name, setName] = useState("");
@@ -27,7 +29,7 @@ const BookingPage = () => {
 
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
-  const bookingsQueryEnabled = !!stylist && step >= 2;
+  const bookingsQueryEnabled = !!stylist && step >= 4;
 
   // Set up polling to sync bookings across tabs and devices
   useEffect(() => {
@@ -58,6 +60,7 @@ const BookingPage = () => {
     mutationFn: async () => {
       await createBooking({
         stylist,
+        service,
         date: dateStr,
         time: selectedTime,
         customer_name: name.trim(),
@@ -89,11 +92,11 @@ const BookingPage = () => {
           </div>
           <h1 className="text-2xl font-display font-semibold mb-3">Tack för din bokning!</h1>
           <p className="text-muted-foreground mb-2">
-            {stylist} · {format(selectedDate, "d MMMM yyyy", { locale: sv })} · kl {selectedTime}
+            {stylist} · {service} · {format(selectedDate, "d MMMM yyyy", { locale: sv })} · kl {selectedTime}
           </p>
           <p className="text-muted-foreground text-sm mb-8">Vi ser fram emot ditt besök.</p>
           <p className="text-muted-foreground text-sm mb-8">Vill du avboka ditt besök? Ring oss på 0739647113</p>
-          <Button variant="outline" onClick={() => { setBooked(false); setStep(1); setStylist(""); setSelectedTime(""); setName(""); setPhone(""); }}>
+          <Button variant="outline" onClick={() => { setBooked(false); setStep(1); setStylist(""); setService(""); setSelectedTime(""); setName(""); setPhone(""); }}>
             Ny bokning
           </Button>
         </div>
@@ -106,12 +109,12 @@ const BookingPage = () => {
       <div className="container mx-auto max-w-lg">
         <h1 className="text-3xl font-display font-semibold text-center mb-2 animate-fade-up">Boka tid</h1>
         <p className="text-muted-foreground text-center mb-10 animate-fade-up" style={{ animationDelay: "0.05s", animationFillMode: "both" }}>
-          Steg {step} av 3
+          Steg {step} av 4
         </p>
 
         {/* Step indicators */}
         <div className="flex items-center justify-center gap-2 mb-10">
-          {[1, 2, 3].map((s) => (
+          {[1, 2, 3, 4].map((s) => (
             <div
               key={s}
               className={`h-1.5 rounded-full transition-all duration-300 ${
@@ -140,11 +143,32 @@ const BookingPage = () => {
           </div>
         )}
 
-        {/* Step 2: Choose time */}
+        {/* Step 2: Choose service */}
         {step === 2 && (
+          <div className="space-y-4 animate-fade-up">
+            <h2 className="font-display text-xl font-semibold text-center mb-2">Välj tjänst</h2>
+            <p className="text-muted-foreground text-sm text-center mb-6">Frisör: {stylist}</p>
+            {SERVICES.map((s) => (
+              <button
+                key={s}
+                onClick={() => { setService(s); setStep(3); }}
+                className="w-full p-5 rounded-lg border bg-card hover:border-primary/50 hover:shadow-sm transition-all duration-200 active:scale-[0.98] text-left"
+              >
+                <span className="font-medium text-foreground">{s}</span>
+              </button>
+            ))}
+
+            <Button variant="ghost" onClick={() => { setStep(1); setStylist(""); }} className="w-full mt-3">
+              ← Tillbaka
+            </Button>
+          </div>
+        )}
+
+        {/* Step 3: Choose time */}
+        {step === 3 && (
           <div className="animate-fade-up">
             <h2 className="font-display text-xl font-semibold text-center mb-2">Välj tid</h2>
-            <p className="text-muted-foreground text-sm text-center mb-6">Frisör: {stylist}</p>
+            <p className="text-muted-foreground text-sm text-center mb-6">Frisör: {stylist} · {service}</p>
 
             {/* Date selector */}
             <div className="flex items-center justify-center gap-4 mb-8">
@@ -174,7 +198,7 @@ const BookingPage = () => {
                   <button
                     key={time}
                     disabled={isBooked}
-                    onClick={() => { setSelectedTime(time); setStep(3); }}
+                    onClick={() => { setSelectedTime(time); setStep(4); }}
                     className={`py-3 rounded-md text-sm font-medium transition-all duration-150 active:scale-[0.96] ${
                       isBooked
                         ? "bg-primary/15 text-primary/50 cursor-not-allowed line-through"
@@ -187,18 +211,18 @@ const BookingPage = () => {
               })}
             </div>
 
-            <Button variant="ghost" onClick={() => { setStep(1); setStylist(""); }} className="w-full">
+            <Button variant="ghost" onClick={() => { setStep(2); setSelectedTime(""); }} className="w-full">
               ← Tillbaka
             </Button>
           </div>
         )}
 
-        {/* Step 3: Form */}
-        {step === 3 && (
+        {/* Step 4: Form */}
+        {step === 4 && (
           <div className="animate-fade-up">
             <h2 className="font-display text-xl font-semibold text-center mb-2">Dina uppgifter</h2>
             <p className="text-muted-foreground text-sm text-center mb-8">
-              {stylist} · {format(selectedDate, "d MMMM", { locale: sv })} · kl {selectedTime}
+              {stylist} · {service} · {format(selectedDate, "d MMMM", { locale: sv })} · kl {selectedTime}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -234,7 +258,7 @@ const BookingPage = () => {
               </Button>
             </form>
 
-            <Button variant="ghost" onClick={() => { setStep(2); setSelectedTime(""); }} className="w-full mt-3">
+            <Button variant="ghost" onClick={() => { setStep(3); setSelectedTime(""); }} className="w-full mt-3">
               ← Tillbaka
             </Button>
           </div>

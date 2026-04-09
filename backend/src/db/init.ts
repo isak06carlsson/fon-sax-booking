@@ -15,6 +15,7 @@ const initializeDatabase = () => {
       CREATE TABLE IF NOT EXISTS bookings (
         id TEXT PRIMARY KEY,
         stylist TEXT NOT NULL,
+        service TEXT NOT NULL,
         date TEXT NOT NULL,
         time TEXT NOT NULL,
         customer_name TEXT NOT NULL,

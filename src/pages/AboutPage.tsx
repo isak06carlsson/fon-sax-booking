@@ -1,4 +1,12 @@
 import { User } from "lucide-react";
+import salon1 from "@/assets/salon-1.jpg.jpg";
+import salon2 from "@/assets/salon-2.jpg.jpg";
+import salon3 from "@/assets/salon-3.jpg.jpg";
+import salon4 from "@/assets/salon-4.jpg.jpg";
+import salon5 from "@/assets/salon-5.jpg.jpg";
+import salon6 from "@/assets/salon-6.jpg.jpg";
+import salon7 from "@/assets/salon-7.jpg.jpg";
+import salon8 from "@/assets/salon-8.jpg.jpg";
 
 const stylists = [
   {
@@ -42,6 +50,24 @@ const AboutPage = () => {
               <p className="text-muted-foreground text-sm leading-relaxed">{s.description}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      
+
+      <div className="mt-16 animate-fade-up px-4">
+        <h2 className="text-2xl font-display font-semibold text-center mb-10">Vår salong</h2>
+        <div className="flex flex-wrap gap-6 px-4 justify-center">
+          {[salon1, salon2, salon3, salon4, salon5, salon6, salon7, salon8].map((img, i) => (
+            <img
+              key={i}
+              src={img}
+              alt={`Salong ${i + 1}`}
+              className="w-[500px] h-[500px] object-cover rounded-lg shadow-sm animate-fade-up"
+              style={{ animationDelay: `${0.15 + i * 0.1}s`, animationFillMode: "both" }}
+            />
+          ))}
+         
         </div>
       </div>
     </div>

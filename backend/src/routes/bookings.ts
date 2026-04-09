@@ -39,10 +39,10 @@ router.get('/bookings/stylist/:stylist/date/:date', (req, res) => {
 
 // Create a new booking
 router.post('/bookings', (req, res) => {
-  const { stylist, date, time, customer_name, customer_phone }: CreateBookingInput = req.body;
+  const { stylist, service, date, time, customer_name, customer_phone }: CreateBookingInput = req.body;
 
   // Validate input
-  if (!stylist || !date || !time || !customer_name || !customer_phone) {
+  if (!stylist || !service || !date || !time || !customer_name || !customer_phone) {
     res.status(400).json({ error: 'Missing required fields' });
     return;
   }
@@ -51,8 +51,8 @@ router.post('/bookings', (req, res) => {
   const created_at = new Date().toISOString();
 
   db.run(
-    'INSERT INTO bookings (id, stylist, date, time, customer_name, customer_phone, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [id, stylist, date, time, customer_name.trim(), customer_phone.trim(), created_at],
+    'INSERT INTO bookings (id, stylist, service, date, time, customer_name, customer_phone, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [id, stylist, service, date, time, customer_name.trim(), customer_phone.trim(), created_at],
     function(err: Error | null) {
       if (err) {
         if (err.message.includes('UNIQUE')) {
@@ -64,6 +64,7 @@ router.post('/bookings', (req, res) => {
         res.status(201).json({
           id,
           stylist,
+          service,
           date,
           time,
           customer_name: customer_name.trim(),

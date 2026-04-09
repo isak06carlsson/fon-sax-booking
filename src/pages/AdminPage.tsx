@@ -142,6 +142,7 @@ const AdminPage = () => {
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-sm text-muted-foreground">
+                          <p>{b.service}</p>
                           {format(new Date(b.date), "d MMM", { locale: sv })}
                           {" · kl "}
                           {b.time}
@@ -187,6 +188,7 @@ const AdminPage = () => {
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-sm text-muted-foreground">
+                          <p>{b.service}</p>
                           {format(new Date(b.date), "d MMM", { locale: sv })}
                           {" · kl "}
                           {b.time}

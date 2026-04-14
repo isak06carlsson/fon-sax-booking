@@ -54,7 +54,16 @@ const AdminPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Invalid password');
+        let message = 'Invalid password';
+        try {
+          const payload = await response.json();
+          if (payload?.error) {
+            message = payload.error;
+          }
+        } catch {
+          // Use default message when payload parsing fails.
+        }
+        throw new Error(message);
       }
 
       const data = await response.json();
@@ -62,8 +71,9 @@ const AdminPage = () => {
       setAuthenticated(true);
       setPassword("");
     } catch (err) {
-      setError("Fel lösenord");
-      toast.error("Fel lösenord");
+      const message = err instanceof Error ? err.message : "Fel lösenord";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

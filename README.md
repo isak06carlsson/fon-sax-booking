@@ -1,12 +1,12 @@
 # Fön Sax Booking System
 
-A modern booking system for hair salon appointments built with React, TypeScript, and SQLite.
+A modern booking system for hair salon appointments built with React, TypeScript, and PostgreSQL.
 
 ## Tech Stack
 
 - **Frontend**: React 18, TypeScript, Vite, React Query, Shadcn UI
 - **Backend**: Node.js, Express.js
-- **Database**: SQLite3
+- **Database**: PostgreSQL (local or managed, recommended: Render PostgreSQL)
 - **Styling**: Tailwind CSS
 - **Routing**: React Router v6
 
@@ -28,19 +28,19 @@ A modern booking system for hair salon appointments built with React, TypeScript
 │   │   ├── routes/
 │   │   │   └── bookings.ts      # Booking API endpoints
 │   │   ├── db/
-│   │   │   ├── connection.ts    # SQLite connection
-│   │   │   └── init.ts          # Database initialization
+│   │   │   ├── connection.ts    # PostgreSQL pool connection
+│   │   │   └── init.ts          # Database schema initialization
 │   │   └── types/
 │   │       └── index.ts         # TypeScript types
-│   ├── bookings.db              # SQLite database (auto-created)
 │   └── package.json
-└── MIGRATION.md                 # Supabase to SQLite migration guide
+└── MIGRATION.md                 # Migration notes
 ```
 
 ## Quick Start
 
 ### Prerequisites
 - Node.js 18+ and npm/bun
+- PostgreSQL database (or managed database URL)
 - Port 3001 for backend
 - Port 5173 for frontend
 
@@ -63,6 +63,17 @@ cd ..
 cd backend
 npm run db:init
 cd ..
+```
+
+4. **Configure backend env**
+Create/update `backend/.env` with:
+
+```env
+PORT=3001
+FRONTEND_URL=http://localhost:5173
+NODE_ENV=development
+ADMIN_PASSWORD=change-me
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fonsax
 ```
 
 ### Running the Application
@@ -123,22 +134,26 @@ VITE_API_URL=http://localhost:3001/api
 PORT=3001
 FRONTEND_URL=http://localhost:5173
 NODE_ENV=development
+ADMIN_PASSWORD=change-me
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fonsax
 ```
 
 See `.env.example` files for reference.
 
 ## Database
 
-SQLite database is automatically created at `backend/bookings.db` on first run.
+Bookings are stored in PostgreSQL.
+
+For production hosting, use a managed PostgreSQL provider (Render PostgreSQL recommended).
 
 **Bookings Table Schema:**
 - `id` (UUID, PK)
 - `stylist` (TEXT)
-- `date` (TEXT, YYYY-MM-DD)
+- `date` (DATE)
 - `time` (TEXT, HH:MM)
 - `customer_name` (TEXT)
 - `customer_phone` (TEXT)
-- `created_at` (TIMESTAMP)
+- `created_at` (TIMESTAMPTZ)
 - UNIQUE constraint on (stylist, date, time)
 
 ## Development
@@ -164,17 +179,22 @@ npm run test:watch   # Watch mode
 
 See [MIGRATION.md](./MIGRATION.md#production-considerations) for production deployment guidelines.
 
-## Recent Changes
+## Hosting
 
-This project was recently migrated from Supabase to SQLite. See [MIGRATION.md](./MIGRATION.md) for detailed information about:
-- What changed in the codebase
-- Database migration details
-- Real-time update strategy (polling)
-- Troubleshooting guide
+Recommended setup:
+- Frontend: Render Static Site
+- Backend: Render Web Service
+- Database: Render PostgreSQL
+
+Set these in production:
+- Frontend `VITE_API_URL=https://<backend-domain>/api`
+- Backend `FRONTEND_URL=https://<frontend-domain>`
+- Backend `DATABASE_URL=<render-postgres-url>`
+- Backend `ADMIN_PASSWORD=<secure-password>`
 
 ## Admin Credentials
 
-**Default password**: `fonsax2024`
+**Default password in local example**: `fonsax2026`
 
 ⚠️ Change this in production!
 

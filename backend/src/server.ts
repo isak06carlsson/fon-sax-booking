@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import bookingsRouter from './routes/bookings.js';
-import db from './db/connection.js';
+import { query } from './db/connection.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -18,19 +18,15 @@ const devAllowedOrigins = [
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Function to cleanup expired bookings
-const cleanupExpiredBookings = () => {
-  const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD
-  db.run(
-    'DELETE FROM bookings WHERE date < ?',
-    [today],
-    function(err: Error | null) {
-      if (err) {
-        console.error('Error cleaning up expired bookings:', err);
-      } else if (this.changes > 0) {
-        console.log(`Cleaned up ${this.changes} expired booking(s)`);
-      }
+const cleanupExpiredBookings = async () => {
+  try {
+    const result = await query('DELETE FROM bookings WHERE date < CURRENT_DATE');
+    if ((result.rowCount ?? 0) > 0) {
+      console.log(`Cleaned up ${result.rowCount} expired booking(s)`);
     }
-  );
+  } catch (error) {
+    console.error('Error cleaning up expired bookings:', error);
+  }
 };
 
 // Run cleanup on server start
@@ -44,7 +40,7 @@ app.use(
   cors({
     origin: isProduction
       ? process.env.FRONTEND_URL || false
-      : (origin, cb) => {
+      : (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
           if (!origin) return cb(null, true);
           if (devAllowedOrigins.includes(origin)) return cb(null, true);
           if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {

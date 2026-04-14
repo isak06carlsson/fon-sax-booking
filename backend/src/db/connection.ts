@@ -1,20 +1,21 @@
-import sqlite3 from 'sqlite3';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { Pool, type QueryResult, type QueryResultRow } from 'pg';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const dbPath = join(__dirname, '../bookings.db');
+const connectionString = process.env.DATABASE_URL;
 
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err);
-  } else {
-    console.log('Connected to SQLite database');
-  }
+if (!connectionString) {
+  throw new Error('DATABASE_URL is not set. Configure backend/.env before starting the server.');
+}
+
+const sslEnabled = process.env.NODE_ENV === 'production';
+
+const pool = new Pool({
+  connectionString,
+  ssl: sslEnabled ? { rejectUnauthorized: false } : false,
 });
 
-// Enable foreign keys
-db.run('PRAGMA foreign_keys = ON');
+export const query = async <T extends QueryResultRow = QueryResultRow>(
+  text: string,
+  params?: unknown[]
+): Promise<QueryResult<T>> => pool.query<T>(text, params);
 
-export default db;
+export default pool;

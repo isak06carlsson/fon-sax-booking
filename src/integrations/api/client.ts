@@ -22,12 +22,29 @@ export interface CreateBookingInput {
   customer_phone: string;
 }
 
+interface ApiErrorPayload {
+  error?: string;
+  code?: string;
+}
+
+const parseApiError = async (response: Response, fallback: string): Promise<never> => {
+  let payload: ApiErrorPayload | null = null;
+
+  try {
+    payload = (await response.json()) as ApiErrorPayload;
+  } catch {
+    payload = null;
+  }
+
+  const message = payload?.error || fallback;
+  throw new Error(message);
+};
+
 // Get available times for a stylist on a specific date
 export const getBookedTimes = async (stylist: string, date: string): Promise<string[]> => {
   const response = await fetch(`${API_URL}/bookings/stylist/${stylist}/date/${date}`);
   if (!response.ok) {
-    if (response.status === 404) return [];
-    throw new Error('Failed to fetch booked times');
+    await parseApiError(response, 'Failed to fetch booked times');
   }
   return response.json();
 };
@@ -43,8 +60,7 @@ export const createBooking = async (booking: CreateBookingInput): Promise<Bookin
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create booking');
+    await parseApiError(response, 'Failed to create booking');
   }
 
   return response.json();
@@ -54,7 +70,7 @@ export const createBooking = async (booking: CreateBookingInput): Promise<Bookin
 export const getAllBookings = async (): Promise<Booking[]> => {
   const response = await fetch(`${API_URL}/bookings`);
   if (!response.ok) {
-    throw new Error('Failed to fetch bookings');
+    await parseApiError(response, 'Failed to fetch bookings');
   }
   return response.json();
 };
@@ -66,7 +82,7 @@ export const deleteBooking = async (id: string): Promise<void> => {
   });
 
   if (!response.ok) {
-    throw new Error('Failed to delete booking');
+    await parseApiError(response, 'Failed to delete booking');
   }
 };
 

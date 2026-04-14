@@ -1,44 +1,30 @@
-import sqlite3 from 'sqlite3';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import 'dotenv/config';
+import pool from './connection.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const dbPath = join(__dirname, '../bookings.db');
-
-const db = new sqlite3.Database(dbPath);
-
-const initializeDatabase = () => {
-  db.serialize(() => {
-    // Create bookings table
-    db.run(`
+const initializeDatabase = async () => {
+  try {
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS bookings (
         id TEXT PRIMARY KEY,
         stylist TEXT NOT NULL,
         service TEXT NOT NULL,
-        date TEXT NOT NULL,
+        date DATE NOT NULL,
         time TEXT NOT NULL,
         customer_name TEXT NOT NULL,
         customer_phone TEXT NOT NULL,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         UNIQUE(stylist, date, time)
       )
-    `, (err) => {
-      if (err) {
-        console.error('Error creating bookings table:', err);
-      } else {
-        console.log('Bookings table ready');
-      }
-    });
-  });
+    `);
 
-  db.close((err) => {
-    if (err) {
-      console.error('Error closing database:', err);
-    } else {
-      console.log('Database initialized successfully');
-    }
-  });
+    console.log('Bookings table ready');
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    process.exitCode = 1;
+  } finally {
+    await pool.end();
+  }
 };
 
-initializeDatabase();
+void initializeDatabase();

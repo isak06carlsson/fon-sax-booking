@@ -35,13 +35,9 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "Initializing database..."
-npm run db:init
-if [ $? -ne 0 ]; then
-    echo -e "${RED}Failed to initialize database${NC}"
-    exit 1
-fi
-
+echo "Skipping DB bootstrap in setup script."
+echo "Set backend/.env DATABASE_URL first, then run:"
+echo "  cd backend && npm run db:init"
 cd ..
 
 echo ""
@@ -58,5 +54,5 @@ echo ""
 echo "Frontend: http://localhost:5173"
 echo "Backend:  http://localhost:3001"
 echo ""
-echo "Admin credentials: fonsax2024"
+echo "Admin credentials: set ADMIN_PASSWORD in backend/.env"
 echo ""

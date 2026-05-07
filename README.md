@@ -42,7 +42,7 @@ A modern booking system for hair salon appointments built with React, TypeScript
 - Node.js 18+ and npm/bun
 - PostgreSQL database (or managed database URL)
 - Port 3001 for backend
-- Port 5173 for frontend
+- Port 8080 for frontend
 
 ### Installation
 
@@ -58,23 +58,30 @@ npm install
 cd ..
 ```
 
-3. **Initialize database**
+3. **Start PostgreSQL with Docker**
+```bash
+docker compose up -d
+```
+
+4. **Initialize database**
 ```bash
 cd backend
 npm run db:init
 cd ..
 ```
 
-4. **Configure backend env**
+5. **Configure backend env**
 Create/update `backend/.env` with:
 
 ```env
 PORT=3001
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:8080
 NODE_ENV=development
 ADMIN_PASSWORD=change-me
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fonsax
 ```
+
+The PostgreSQL container uses the same credentials and database name, so this connection string works as-is when Docker is running.
 
 ### Running the Application
 
@@ -93,7 +100,7 @@ npm run dev
 npm run dev:backend
 ```
 
-Frontend: http://localhost:5173
+Frontend: http://localhost:8080
 Backend: http://localhost:3001
 
 ## Features
@@ -132,7 +139,7 @@ VITE_API_URL=http://localhost:3001/api
 ### Backend (.env)
 ```
 PORT=3001
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:8080
 NODE_ENV=development
 ADMIN_PASSWORD=change-me
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fonsax

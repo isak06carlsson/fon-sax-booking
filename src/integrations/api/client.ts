@@ -1,6 +1,6 @@
-// This replaces the Supabase client
+// Booking data client — backed by Lovable Cloud database
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Booking {
   id: string;
@@ -22,103 +22,72 @@ export interface CreateBookingInput {
   customer_phone: string;
 }
 
-interface ApiErrorPayload {
-  error?: string;
-  code?: string;
-}
-
-const parseApiError = async (response: Response, fallback: string): Promise<never> => {
-  let payload: ApiErrorPayload | null = null;
-
-  try {
-    payload = (await response.json()) as ApiErrorPayload;
-  } catch {
-    payload = null;
-  }
-
-  const message = payload?.error || fallback;
-  throw new Error(message);
-};
-
-// Get available times for a stylist on a specific date
+// Get booked times for a stylist on a specific date
 export const getBookedTimes = async (stylist: string, date: string): Promise<string[]> => {
-  const response = await fetch(`${API_URL}/bookings/stylist/${stylist}/date/${date}`);
-  if (!response.ok) {
-    await parseApiError(response, 'Failed to fetch booked times');
-  }
-  return response.json();
+  const { data, error } = await supabase
+    .from("bookings")
+    .select("time")
+    .eq("stylist", stylist)
+    .eq("date", date);
+
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => row.time);
 };
 
 // Create a new booking
 export const createBooking = async (booking: CreateBookingInput): Promise<Booking> => {
-  const response = await fetch(`${API_URL}/bookings`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(booking),
-  });
+  const { data, error } = await supabase
+    .from("bookings")
+    .insert(booking)
+    .select()
+    .single();
 
-  if (!response.ok) {
-    await parseApiError(response, 'Failed to create booking');
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("Tiden är tyvärr redan bokad. Välj en annan tid.");
+    }
+    throw new Error(error.message);
   }
-
-  return response.json();
+  return data;
 };
 
 // Get all bookings (for admin)
 export const getAllBookings = async (): Promise<Booking[]> => {
-  const response = await fetch(`${API_URL}/bookings`);
-  if (!response.ok) {
-    await parseApiError(response, 'Failed to fetch bookings');
-  }
-  return response.json();
+  const { data, error } = await supabase
+    .from("bookings")
+    .select("*")
+    .order("date", { ascending: true })
+    .order("time", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
 };
 
 // Delete a booking
 export const deleteBooking = async (id: string): Promise<void> => {
-  const response = await fetch(`${API_URL}/bookings/${id}`, {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    await parseApiError(response, 'Failed to delete booking');
-  }
+  const { error } = await supabase.from("bookings").delete().eq("id", id);
+  if (error) throw new Error(error.message);
 };
 
-// Set up polling for real-time updates
-let pollInterval: NodeJS.Timeout | null = null;
-
+// Subscribe to booking changes (real-time)
 export const startPolling = (
   callback: (bookings?: Booking[]) => void,
-  intervalMs: number = 5000
+  _intervalMs: number = 5000
 ): (() => void) => {
-  // Call immediately and then set interval
-  const poll = async () => {
-    try {
-      const bookings = await getAllBookings();
-      callback(bookings);
-    } catch (error) {
-      console.error('Polling error:', error);
-      callback();
-    }
-  };
+  const channel = supabase
+    .channel("bookings-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "bookings" },
+      () => callback()
+    )
+    .subscribe();
 
-  poll();
-  pollInterval = setInterval(poll, intervalMs);
-
-  // Return cleanup function
   return () => {
-    if (pollInterval) {
-      clearInterval(pollInterval);
-      pollInterval = null;
-    }
+    supabase.removeChannel(channel);
   };
 };
 
 export const stopPolling = () => {
-  if (pollInterval) {
-    clearInterval(pollInterval);
-    pollInterval = null;
-  }
+  // No-op: channels are cleaned up via the function returned by startPolling
 };

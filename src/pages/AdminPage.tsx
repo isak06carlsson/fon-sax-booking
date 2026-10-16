@@ -11,7 +11,7 @@ import { toast } from "sonner";
 const ADMIN_PASSWORD = "fonsax2024";
 
 const AdminPage = () => {
-  const [authenticated, setAuthenticated] = useState(false);
+  const [authenticated, setAuthenticated] = useState(() => localStorage.getItem('admin-token') === 'ok');
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);

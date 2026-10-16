@@ -19,7 +19,12 @@ const AdminPage = () => {
 
   const { data: bookings = [], isLoading: bookingsLoading } = useQuery({
     queryKey: ["admin-bookings"],
-    queryFn: getAllBookings,
+    queryFn: async () => {
+      const all = await getAllBookings();
+      // Hide bookings whose day has already passed
+      const today = format(new Date(), "yyyy-MM-dd");
+      return all.filter((b) => b.date >= today);
+    },
     enabled: authenticated,
   });
 

@@ -8,7 +8,7 @@ import { sv } from "date-fns/locale";
 import { Lock, LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const ADMIN_PASSWORD = "fonsax2024";
 
 const AdminPage = () => {
   const [authenticated, setAuthenticated] = useState(false);
@@ -44,39 +44,15 @@ const AdminPage = () => {
     setError("");
     setIsLoading(true);
 
-    try {
-      const response = await fetch(`${API_URL}/admin/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password }),
-      });
-
-      if (!response.ok) {
-        let message = 'Invalid password';
-        try {
-          const payload = await response.json();
-          if (payload?.error) {
-            message = payload.error;
-          }
-        } catch {
-          // Use default message when payload parsing fails.
-        }
-        throw new Error(message);
-      }
-
-      const data = await response.json();
-      localStorage.setItem('admin-token', data.token);
+    if (password === ADMIN_PASSWORD) {
+      localStorage.setItem('admin-token', 'ok');
       setAuthenticated(true);
       setPassword("");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Fel lösenord";
-      setError(message);
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
+    } else {
+      setError("Fel lösenord");
+      toast.error("Fel lösenord");
     }
+    setIsLoading(false);
   };
 
   const handleLogout = () => {

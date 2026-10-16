@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792151509171,
+      "tag": "0000_fix_bookings_grants_and_service",
+      "breakpoints": true
+    }
+  ]
+}
